@@ -8,13 +8,12 @@ func bfs(graphe [][]int, start int, end int) []int {
 		return nil
 	}
 	var queue []int
-	var visited []int
-	//???comment ça marche
+	visited := make(map[int]bool)
 	parent := make(map[int]int)
 
 	//Noeud de départ
 	queue = append(queue, start)
-	visited = append(visited, start)
+	visited[start] = true
 	// Le nœud de départ n'a pas de parent
 	parent[start] = -1
 	//Tant qu'il y a un élément dans la file d'attente on continue
@@ -32,8 +31,8 @@ func bfs(graphe [][]int, start int, end int) []int {
 		//On traverse les éléments de l'élément courant du graphe
 		for _, currentBranches := range graphe[current] {
 			//Si visited ne contient pas cet éléments on le rajoute à la file d'attente
-			if !contains(visited, currentBranches) {
-				visited = append(visited, currentBranches)
+			if !visited[currentBranches] {
+				visited[currentBranches] = true
 				parent[currentBranches] = current
 				queue = append(queue, currentBranches)
 			}
@@ -55,14 +54,4 @@ func reconstructPath(parent map[int]int, end int) []int {
     }
     
     return chemin
-}
-
-// Fonction qui vérifie qu'un nombre appartient à la liste
-func contains(slice []int, element int) bool {
-	for _, item := range slice {
-		if item == element {
-			return true
-		}
-	}
-	return false
 }
