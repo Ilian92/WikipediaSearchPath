@@ -10,22 +10,28 @@ import (
 )
 
 func main() {
-    graphe := [][]int{
-        {1, 2}, 
-        {0, 2}, 
-        {0, 1, 3, 4}, 
-        {2}, 
-        {2}}
-
-
-    fmt.Println(bfs(graphe, 0, 4))
-
+    links := getWikipediaLinks("https://fr.wikipedia.org/wiki/Red_Rising")
+    fmt.Println(links)
 }
 
-// urls exemple: https://fr.wikipedia.org/wiki/Red_Rising
-// func getWikipediaLinks(url string) []string {
+// func wikipediaBFS(startLink string, endLink string) (string){
 
 // }
+
+// urls exemple: https://fr.wikipedia.org/wiki/Red_Rising
+func getWikipediaLinks(url string) []string{
+    var pageContent string = getPageMainContent(url)
+    re := regexp.MustCompile(`/wiki/[^"#:]*`)
+    var allLinksBytes [][]byte = re.FindAll([]byte(pageContent), -1)
+    var allLinks []string
+    for i := 0; i < len(allLinksBytes); i++ {
+        link := string(allLinksBytes[i])
+        if isValidWikipediaLink(link) {
+            allLinks = append(allLinks, link)
+        }
+    }
+    return allLinks
+}
 
 func isValidWikipediaLink(link string) bool {
     excludePatterns := []string{
@@ -63,7 +69,3 @@ func getPageMainContent(link string) string {
     log.Println("Pas de balise <main> trouvée.")
     return ""
 }
-
-// func wikipediaBFS(startLink string, endLink string) (string){
-
-// }
