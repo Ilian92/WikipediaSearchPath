@@ -3,7 +3,6 @@ package main
 // import "fmt"
 
 func bfs(graphe [][]int, start int, end int) []int {
-	// var returnMessage string
 	if start == end {
 		return nil
 	}

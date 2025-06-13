@@ -5,23 +5,110 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strings"
 )
 
 func main() {
-    links := getWikipediaLinks("https://fr.wikipedia.org/wiki/Red_Rising")
-    fmt.Println(links)
+    var startUrl string = "https://fr.wikipedia.org/wiki/One_Piece"
+    var endUrl string = "https://fr.wikipedia.org/wiki/Monkey_D._Luffy"
+
+    fmt.Println("Recherche du chemin...")
+    chemin := wikipediaBFS(startUrl, endUrl, 4)
+    
+    if chemin != nil {
+        fmt.Printf("Chemin trouvé (%d étapes):\n", len(chemin))
+        for i, page := range chemin {
+            fmt.Printf("%d. %s\n", i+1, page)
+        }
+    } else {
+        fmt.Println("Aucun chemin trouvé")
+    }
+    
+    // Résultat retourné:
+
+    // Recherche du chemin...
+    // Exploration: https://fr.wikipedia.org/wiki/One_Piece (profondeur 0)
+    // Trouvé 840 liens valides
+    // Chemin trouvé (2 étapes):
+    // 1. https://fr.wikipedia.org/wiki/One_Piece
+    // 2. https://fr.wikipedia.org/wiki/Monkey_D._Luffy
 }
 
-// func wikipediaBFS(startLink string, endLink string) (string){
+func wikipediaBFS(startLink string, endLink string, maxDepth int) ([]string){
+    if startLink == endLink {
+        return []string{startLink}
+    }
+    type Node struct {
+        url   string
+        depth int
+    }
+    
+    var queue []Node
+	visited := make(map[string]bool)
+	parent := make(map[string]string)
 
-// }
+	queue = append(queue, Node{startLink, 0})
+	visited[startLink] = true
+
+    parent[startLink] = ""
+
+    for len(queue) > 0 {
+		current := queue[0]
+		queue = queue[1:]
+
+        if current.depth >= maxDepth {
+            continue
+        }
+        
+        fmt.Printf("Exploration: %s (profondeur %d)\n", current.url, current.depth)
+        
+		if current.url == endLink {
+			return reconstructPathLink(parent, endLink)
+		}
+
+        links := getWikipediaLinks(current.url)
+        fmt.Printf("Trouvé %d liens valides\n", len(links))
+
+		for _, link := range links {
+            var fullUrl string = "https://fr.wikipedia.org" + link
+
+            // Ajout d'une vérification du la présence de l'url dans la liste pour optimiser le code
+            if fullUrl == endLink {
+                parent[fullUrl] = current.url
+                return reconstructPathLink(parent, endLink)
+            }
+
+			if !visited[fullUrl] {
+				visited[fullUrl] = true
+				parent[fullUrl] = current.url
+				queue = append(queue, Node{fullUrl, current.depth + 1})
+			}
+		}
+        // On peu rajouter un délai ici si on ne veut pas harceler les serveurs de Wikipedia
+	}
+	return nil
+}
+
+func reconstructPathLink(parent map[string]string, endLink string) []string {
+    chemin := []string{}
+    current := endLink
+    
+    // Remonter depuis la fin jusqu'au début
+    for current != "" {
+		// Ajouter au début
+        chemin = append([]string{current}, chemin...)
+        current = parent[current]
+    }
+    
+    return chemin
+}
 
 // urls exemple: https://fr.wikipedia.org/wiki/Red_Rising
 func getWikipediaLinks(url string) []string{
     var pageContent string = getPageMainContent(url)
-    re := regexp.MustCompile(`/wiki/[^"#:]*`)
+    re := regexp.MustCompile(`/wiki/[^"#\s]*`)
     var allLinksBytes [][]byte = re.FindAll([]byte(pageContent), -1)
     var allLinks []string
     for i := 0; i < len(allLinksBytes); i++ {
@@ -34,13 +121,23 @@ func getWikipediaLinks(url string) []string{
 }
 
 func isValidWikipediaLink(link string) bool {
+    // Décoder l'URL pour gérer les caractères encodés
+    decodedLink, err := url.QueryUnescape(link)
+    if err != nil {
+        decodedLink = link
+    }
+    
     excludePatterns := []string{
-        "Category:", "Template:", "Help:", "File:", "Special:",
-        "Talk:", "User:", "Wikipedia:", "Portal:", "Aide:",
+        "/wiki/Category", "/wiki/Template", "/wiki/Help", 
+        "/wiki/File", "/wiki/Special", "/wiki/Talk", 
+        "/wiki/User", "/wiki/Wikipedia", "/wiki/Portal", 
+        "/wiki/Aide", "/wiki/Spécial", "/wiki/Catégorie",
+        "/wiki/Modèle", "/wiki/Fichier", "/wiki/Discussion",
+        "/wiki/Utilisateur", "/wiki/Wikipédia", "/wiki/Portail",
     }
 
     for _, pattern := range excludePatterns {
-        if strings.Contains(link, pattern) {
+        if strings.HasPrefix(decodedLink, pattern) {
             return false
         }
     }
