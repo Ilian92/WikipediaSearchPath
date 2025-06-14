@@ -11,8 +11,18 @@ import (
 )
 
 func main() {
-    var startUrl string = "https://fr.wikipedia.org/wiki/One_Piece"
-    var endUrl string = "https://fr.wikipedia.org/wiki/Monkey_D._Luffy"
+    // var startUrl string = "https://fr.wikipedia.org/wiki/France"
+    // var endUrl string = "https://fr.wikipedia.org/wiki/Rose_Bertin"
+
+    var startUrl string
+    var endUrl string
+
+    fmt.Println("Vous allez devoir rentrer 2 url correspondant à la page de départ et la page d'arrivé (https://fr.wikipedia.org/wiki/[La page])")
+    fmt.Print("Veuillez Choisir la page de début:")
+    fmt.Scan(&startUrl)
+
+    fmt.Print("Veuillez Choisir la page de d'arrivé:")
+    fmt.Scan(&endUrl)
 
     fmt.Println("Recherche du chemin...")
     chemin := wikipediaBFS(startUrl, endUrl, 4)
@@ -29,11 +39,12 @@ func main() {
     // Résultat retourné:
 
     // Recherche du chemin...
-    // Exploration: https://fr.wikipedia.org/wiki/One_Piece (profondeur 0)
-    // Trouvé 840 liens valides
-    // Chemin trouvé (2 étapes):
-    // 1. https://fr.wikipedia.org/wiki/One_Piece
-    // 2. https://fr.wikipedia.org/wiki/Monkey_D._Luffy
+    // Exploration: https://fr.wikipedia.org/wiki/France (profondeur 0)
+    // Trouvé x liens valides...
+    // Chemin trouvé (3 étapes):
+    // 1. https://fr.wikipedia.org/wiki/France
+    // 2. https://fr.wikipedia.org/wiki/Paris
+    // 3. https://fr.wikipedia.org/wiki/Rose_Bertin
 }
 
 func wikipediaBFS(startLink string, endLink string, maxDepth int) ([]string){
