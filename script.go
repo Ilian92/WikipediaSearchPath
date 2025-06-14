@@ -18,13 +18,34 @@ func main() {
     var endUrl string
 
     fmt.Println("Vous allez devoir rentrer 2 url correspondant à la page de départ et la page d'arrivé (https://fr.wikipedia.org/wiki/[La page])")
-    fmt.Print("Veuillez Choisir la page de début:")
-    fmt.Scan(&startUrl)
+    
+    for {
+        fmt.Print("Veuillez Choisir la page de début: ")
+        fmt.Scan(&startUrl)
+        
+        if isValidWikipediaURL(startUrl) {
+            break
+        }
+        fmt.Println("URL invalide. L'URL doit commencer par 'https://fr.wikipedia.org/wiki/' et contenir un nom de la page.")
+        fmt.Println("Exemple: https://fr.wikipedia.org/wiki/France")
+    }
 
-    fmt.Print("Veuillez Choisir la page de d'arrivé:")
-    fmt.Scan(&endUrl)
+    for {
+        fmt.Print("Veuillez Choisir la page d'arrivé: ")
+        fmt.Scan(&endUrl)
+        
+        if isValidWikipediaURL(endUrl) {
+            break
+        }
+        fmt.Println("URL invalide ! L'URL doit commencer par 'https://fr.wikipedia.org/wiki/' et contenir un nom de la page.")
+        fmt.Println("Exemple: https://fr.wikipedia.org/wiki/Rose_Bertin")
+    }
 
-    fmt.Println("Recherche du chemin...")
+    fmt.Printf("\n✅ URLs valides détectées !\n")
+    fmt.Printf("Départ: %s\n", startUrl)
+    fmt.Printf("Arrivée: %s\n", endUrl)
+    
+    fmt.Println("\nRecherche du chemin...")
     chemin := wikipediaBFS(startUrl, endUrl, 4)
     
     if chemin != nil {
@@ -114,6 +135,15 @@ func reconstructPathLink(parent map[string]string, endLink string) []string {
     }
     
     return chemin
+}
+
+func isValidWikipediaURL(url string) bool {
+    if !strings.HasPrefix(url, "https://fr.wikipedia.org/wiki/") {
+        return false
+    }
+    
+    pageName := strings.TrimPrefix(url, "https://fr.wikipedia.org/wiki/")
+    return len(strings.TrimSpace(pageName)) == 0
 }
 
 // urls exemple: https://fr.wikipedia.org/wiki/Red_Rising
