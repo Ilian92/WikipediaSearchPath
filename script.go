@@ -219,9 +219,13 @@ func getValidWikipediaLinks(url string) []string {
     re := regexp.MustCompile(`/wiki/[^"#\s]*`)
     var allLinksBytes [][]byte = re.FindAll([]byte(pageContent), -1)
     var validLinks []string
+    var compteur int = 0
+    
+    fmt.Printf("Recherche d'URL: 0 URLs trouvés")
     
     for i := 0; i < len(allLinksBytes); i++ {
         link := string(allLinksBytes[i])
+        
         if isValidWikipediaLink(link) {
             fullUrl := "https://fr.wikipedia.org" + link
             
@@ -231,10 +235,14 @@ func getValidWikipediaLinks(url string) []string {
             }
             
             if statusCode == 200 {
-                validLinks = append(validLinks, fullUrl)
+                compteur++
+                // \r retourne au début de la ligne, écrase le texte précédent
+                fmt.Printf("\rRecherche d'URL: %d URLs trouvés", compteur)
             }
         }
     }
+    
+    fmt.Printf("\n")
     return validLinks
 }
 
