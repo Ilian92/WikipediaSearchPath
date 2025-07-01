@@ -41,7 +41,7 @@ func main() {
         fmt.Println("Exemple: https://fr.wikipedia.org/wiki/Rose_Bertin")
     }
 
-    fmt.Printf("\n✅ URLs valides détectées !\n")
+    fmt.Printf("\nURLs valides détectées !\n")
     fmt.Printf("Départ: %s\n", startUrl)
     fmt.Printf("Arrivée: %s\n", endUrl)
     
@@ -78,17 +78,17 @@ func wikipediaBFS(startLink string, endLink string, maxDepth int) ([]string){
     }
     
     var queue []Node
-	visited := make(map[string]bool)
-	parent := make(map[string]string)
+    visited := make(map[string]bool)
+    parent := make(map[string]string)
 
-	queue = append(queue, Node{startLink, 0})
-	visited[startLink] = true
+    queue = append(queue, Node{startLink, 0})
+    visited[startLink] = true
 
     parent[startLink] = ""
 
     for len(queue) > 0 {
-		current := queue[0]
-		queue = queue[1:]
+        current := queue[0]
+        queue = queue[1:]
 
         if current.depth >= maxDepth {
             continue
@@ -96,31 +96,29 @@ func wikipediaBFS(startLink string, endLink string, maxDepth int) ([]string){
         
         fmt.Printf("Exploration: %s (profondeur %d)\n", current.url, current.depth)
         
-		if current.url == endLink {
-			return reconstructPathLink(parent, endLink)
-		}
+        if current.url == endLink {
+            return reconstructPathLink(parent, endLink)
+        }
 
-        links := getWikipediaLinks(current.url)
-        fmt.Printf("Trouvé %d liens valides\n", len(links))
+        // Récupération des liens avec vérification du status code intégrée
+        links := getValidWikipediaLinks(current.url)
+        fmt.Printf("Trouvé %d liens valides et accessibles\n", len(links))
 
-		for _, link := range links {
-            var fullUrl string = "https://fr.wikipedia.org" + link
-
+        for _, fullUrl := range links {
             // Ajout d'une vérification du la présence de l'url dans la liste pour optimiser le code
             if fullUrl == endLink {
                 parent[fullUrl] = current.url
                 return reconstructPathLink(parent, endLink)
             }
 
-			if !visited[fullUrl] {
-				visited[fullUrl] = true
-				parent[fullUrl] = current.url
-				queue = append(queue, Node{fullUrl, current.depth + 1})
-			}
-		}
-        // On peu rajouter un délai ici si on ne veut pas harceler les serveurs de Wikipedia
-	}
-	return nil
+            if !visited[fullUrl] {
+                visited[fullUrl] = true
+                parent[fullUrl] = current.url
+                queue = append(queue, Node{fullUrl, current.depth + 1})
+            }
+        }
+    }
+    return nil
 }
 
 func reconstructPathLink(parent map[string]string, endLink string) []string {
@@ -140,10 +138,9 @@ func reconstructPathLink(parent map[string]string, endLink string) []string {
 func isValidWikipediaURL(url string) bool {
     if !strings.HasPrefix(url, "https://fr.wikipedia.org/wiki/") {
         return false
+    } else {
+        return true
     }
-    
-    pageName := strings.TrimPrefix(url, "https://fr.wikipedia.org/wiki/")
-    return len(strings.TrimSpace(pageName)) == 0
 }
 
 // urls exemple: https://fr.wikipedia.org/wiki/Red_Rising
@@ -207,3 +204,37 @@ func getPageMainContent(link string) string {
     log.Println("Pas de balise <main> trouvée.")
     return ""
 }
+
+func getPageResponseCode(link string) (int, error) {
+    res, err := http.Head(link)
+    if err != nil {
+        return 0, err
+    }
+    defer res.Body.Close()
+    return res.StatusCode, nil
+}
+
+func getValidWikipediaLinks(url string) []string {
+    var pageContent string = getPageMainContent(url)
+    re := regexp.MustCompile(`/wiki/[^"#\s]*`)
+    var allLinksBytes [][]byte = re.FindAll([]byte(pageContent), -1)
+    var validLinks []string
+    
+    for i := 0; i < len(allLinksBytes); i++ {
+        link := string(allLinksBytes[i])
+        if isValidWikipediaLink(link) {
+            fullUrl := "https://fr.wikipedia.org" + link
+            
+            statusCode, err := getPageResponseCode(fullUrl)
+            if err != nil {
+                continue
+            }
+            
+            if statusCode == 200 {
+                validLinks = append(validLinks, fullUrl)
+            }
+        }
+    }
+    return validLinks
+}
+
